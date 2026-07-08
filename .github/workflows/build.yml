@@ -171,12 +171,10 @@ jobs:
         #_src="build/frida-${{ matrix.os }}-${{ matrix.arch }}/lib/frida/${bit_width}/frida-gadget.so"
 
         _src="build/subprojects/frida-core/lib/gadget/frida-gadget.so"
+        python subprojects/frida-core/src/anti-anti-frida.py "${_src}"  # patch gadget in place: full symbol+rodata+string scrubbing sticks on a .so
         ${compr%:*} -k "${_src}"
         gh_release_put "${_src}.${compr#*:}" "${GITHUB_REPOSITORY##*/}-gadget-${FRIDA_VERSION}-${{ matrix.os }}-${{ matrix.arch }}.so.${compr#*:}"
-
-        #python subprojects/frida-core/src/anti-anti-frida.py "${_src}"
-        rm "${_src}.${compr#*:}"; ${compr%:*} -k "${_src}"
-        mv "${_src}.${compr#*:}" "../libgadget-${{ matrix.arch }}.so.${compr#*:}"
+        mv "${_src}.${compr#*:}" "../libgadget-${{ matrix.arch }}.so.${compr#*:}"  # same patched .so feeds the Zygisk/Riru modules
 
         for j in $(find build/subprojects -iname '*-example.c'); do  # devkit
           _j="${j##*/}"
