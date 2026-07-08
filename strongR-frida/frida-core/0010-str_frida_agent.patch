@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: undetected-frida <noreply@github.com>
+Date: Tue, 8 Jul 2026 00:00:00 +0000
+Subject: [PATCH] strongR-frida: str_frida_agent (patch frida-agent / re.frida.server strings)
+
+---
+ src/anti-anti-frida.py | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/anti-anti-frida.py b/src/anti-anti-frida.py
+index 90e974c..45e15b0 100644
+--- a/src/anti-anti-frida.py
++++ b/src/anti-anti-frida.py
+@@ -34,4 +34,10 @@ if __name__ == "__main__":
+     for i in ["gum-js-loop", "gmain", "gdbus"]:  # comprehension with walrus notation? needs py3.8, tho
+         random_name = "".join(random.sample(string.ascii_lowercase+string.ascii_uppercase, len(i)))
+         print(f"[*] Patch `{i}` to `{random_name}`")
+-        os.system(f"sed -i s/{i}/{random_name}/g {input_file}")
+\ No newline at end of file
++        os.system(f"sed -i s/{i}/{random_name}/g {input_file}")
++
++    for old, new in [("frida-agent", "fradi-agent"), ("re.frida.server", "re.fradi.server")]:
++        print(f"[*] Patch `{old}` to `{new}`")
++        inplace = "-i ''" if sys.platform == "darwin" else "-i"
++        pattern = old.replace(".", r"\.")
++        os.system(f"LC_ALL=C sed {inplace} 's/{pattern}/{new}/g' {input_file}")
+\ No newline at end of file

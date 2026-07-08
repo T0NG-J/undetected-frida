@@ -1,36 +1,20 @@
 From 65976afd602808c55a5d832f469cd4db245a8304 Mon Sep 17 00:00:00 2001
 From: heyang <375525827@qq.com>
 Date: Mon, 24 Oct 2022 15:41:12 +0800
-Subject: [PATCH] strongR-frida: anti-anti-frida.py (rodata + gum-js-loop/gmain/gdbus + frida-agent/re.frida.server string patching)
+Subject: [PATCH 5/8] strongR-frida: symbol_frida_agent_main
 
 ---
- src/anti-anti-frida.py | 60 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 60 insertions(+)
+ src/anti-anti-frida.py                | 22 +++++++++++++++++++++
+ 1 files changed, 22 insertions(+)
  create mode 100644 src/anti-anti-frida.py
 
 diff --git a/src/anti-anti-frida.py b/src/anti-anti-frida.py
 new file mode 100644
-index 0000000..5e91595
+index 00000000..cc4e464d
 --- /dev/null
 +++ b/src/anti-anti-frida.py
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,22 @@
 +#!/usr/bin/env python
-+"""
-+Patch a Frida binary to strip well-known Frida symbols/strings and bypass
-+anti-Frida detection. Requires: pip install lief (Python 3.8+, needs `sed`).
-+
-+Works on any Frida ELF/Mach-O — frida-agent, frida-gadget (.so), AND the
-+frida-server binary — since they all embed the same frida-gum/GLib signatures.
-+NOTE: fully cleans frida-agent/frida-gadget, but the LIEF symbol/.rodata patches
-+don't stick on frida-server (its `sed` strings get patched, but signatures like
-+`FridaScriptEngine` / `frida_agent_main` survive — patch those separately).
-+
-+Usage:  python anti-anti-frida.py <frida-agent.so | frida-gadget.so | frida-server>
-+
-+Patches the file IN PLACE, so run it on a COPY, e.g.:
-+    cp frida-gadget.so frida-gadget-patched.so
-+    python anti-anti-frida.py frida-gadget-patched.so
-+"""
 +import lief
 +import sys
 +import random
@@ -51,27 +35,5 @@ index 0000000..5e91595
 +            symbol.name = symbol.name.replace("frida", random_name)
 +        if "FRIDA" in symbol.name:
 +            symbol.name = symbol.name.replace("FRIDA", random_name)
-+
-+    [
-+        (
-+            print(f"section={section.name} offset={hex(section.file_offset + addr)} {patch_str} -> {''.join(list(patch_str)[::-1])}"),
-+            binary.patch_address(section.file_offset + addr, [ord(n) for n in list(patch_str)[::-1]])  # not sure if reversing a string can be considered sufficient
-+        ) for section in binary.sections if section.name == ".rodata"
-+        for patch_str in ["FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript"]  # 字符串特征修改 尽量与源字符一样
-+        for addr in section.search_all(patch_str)  # Patch 内存字符串
-+    ]
-+
 +    binary.write(input_file)
-+
-+    for i in ["gum-js-loop", "gmain", "gdbus"]:  # comprehension with walrus notation? needs py3.8, tho
-+        random_name = "".join(random.sample(string.ascii_lowercase+string.ascii_uppercase, len(i)))
-+        print(f"[*] Patch `{i}` to `{random_name}`")
-+        inplace = "-i ''" if sys.platform == "darwin" else "-i"
-+        os.system(f"LC_ALL=C sed {inplace} 's/{i}/{random_name}/g' {input_file}")
-+
-+    for old, new in [("frida-agent", "fradi-agent"), ("re.frida.server", "re.fradi.server")]:
-+        print(f"[*] Patch `{old}` to `{new}`")
-+        inplace = "-i ''" if sys.platform == "darwin" else "-i"
-+        pattern = old.replace(".", r"\.")
-+        os.system(f"LC_ALL=C sed {inplace} 's/{pattern}/{new}/g' {input_file}")
 \ No newline at end of file
