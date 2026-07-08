@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: undetected-frida <noreply@github.com>
+Date: Tue, 8 Jul 2026 00:00:00 +0000
+Subject: [PATCH] strongR-frida: str_gum_signatures (sed-scrub gum/GLib strings so the uncompressed agent embedded in frida-server is cleaned too)
+
+---
+ src/anti-anti-frida.py | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/anti-anti-frida.py b/src/anti-anti-frida.py
+index 45e15b0..3612263 100644
+--- a/src/anti-anti-frida.py
++++ b/src/anti-anti-frida.py
+@@ -40,4 +40,10 @@ if __name__ == "__main__":
+         print(f"[*] Patch `{old}` to `{new}`")
+         inplace = "-i ''" if sys.platform == "darwin" else "-i"
+         pattern = old.replace(".", r"\.")
+-        os.system(f"LC_ALL=C sed {inplace} 's/{pattern}/{new}/g' {input_file}")
+\ No newline at end of file
++        os.system(f"LC_ALL=C sed {inplace} 's/{pattern}/{new}/g' {input_file}")
++
++    for sig in ["FridaScriptEngine", "GumScript", "GLib-GIO", "GDBusProxy"]:  # gum/GLib signatures: sed reaches the uncompressed agent embedded in frida-server
++        rev = sig[::-1]
++        print(f"[*] Patch `{sig}` to `{rev}`")
++        inplace = "-i ''" if sys.platform == "darwin" else "-i"
++        os.system(f"LC_ALL=C sed {inplace} 's/{sig}/{rev}/g' {input_file}")
+\ No newline at end of file

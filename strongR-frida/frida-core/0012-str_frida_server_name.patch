@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: undetected-frida <noreply@github.com>
+Date: Tue, 8 Jul 2026 00:00:00 +0000
+Subject: [PATCH] strongR-frida: str_frida_server_name (scrub frida-server identity + frida-main-loop thread name; frida:rpc left intact)
+
+---
+ src/anti-anti-frida.py | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/anti-anti-frida.py b/src/anti-anti-frida.py
+index 3612263..afc57f9 100644
+--- a/src/anti-anti-frida.py
++++ b/src/anti-anti-frida.py
+@@ -46,4 +46,10 @@ if __name__ == "__main__":
+         rev = sig[::-1]
+         print(f"[*] Patch `{sig}` to `{rev}`")
+         inplace = "-i ''" if sys.platform == "darwin" else "-i"
+-        os.system(f"LC_ALL=C sed {inplace} 's/{sig}/{rev}/g' {input_file}")
+\ No newline at end of file
++        os.system(f"LC_ALL=C sed {inplace} 's/{sig}/{rev}/g' {input_file}")
++
++    for name in ["frida-main-loop", "frida-server", "FridaServer"]:  # frida identity/thread strings RASP scans; frida:rpc + error domains kept intact for protocol/functionality
++        random_name = "".join(random.sample(string.ascii_lowercase+string.ascii_uppercase, len(name)))
++        print(f"[*] Patch `{name}` to `{random_name}`")
++        inplace = "-i ''" if sys.platform == "darwin" else "-i"
++        os.system(f"LC_ALL=C sed {inplace} 's/{name}/{random_name}/g' {input_file}")
+\ No newline at end of file
